@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,56 +10,66 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface Tweet {
     id: number
-    name: string
-    handle: string
-    text: string
-    timestamp: string
+    username: string
+    postText: string
+    postDate: string
 }
 
-const initialTweets: Tweet[] = [
-    {
-        id: 1,
-        name: "Elon Musk",
-        handle: "@elonmusk",
-        text: "Cybertruck is built for both land and sea",
-        timestamp: "2h ago"
-    },
-    {
-        id: 2,
-        name: "MKBHD",
-        handle: "@MKBHD",
-        text: "The best smartphone camera is the one you have with you",
-        timestamp: "5h ago"
-    },
-    {
-        id: 3,
-        name: "Paul Graham",
-        handle: "@paulg",
-        text: "Writing is nature's way of letting you know how sloppy your thinking is",
-        timestamp: "1d ago"
-    }
-]
-
 export default function Component() {
-    const [tweets, setTweets] = useState<Tweet[]>(initialTweets)
-    const [name, setName] = useState('')
-    const [text, setText] = useState('')
+    const [tweets, setTweets] = useState<Tweet[]>([])
+    const [username, setUsername] = useState('')
+    const [postText, setPostText] = useState('')
     const maxLength = 280
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (name && text) {
-            const newTweet: Tweet = {
-                id: Date.now(),
-                name,
-                handle: `@${name.toLowerCase().replace(/\s+/g, '')}`,
-                text,
-                timestamp: 'Just now'
+    useEffect(() => {
+        fetchTweets()
+    }, [])
+
+    const fetchTweets = async () => {
+        try {
+            const response = await fetch('https://post-it.gyorgy-varga-b81.workers.dev/list')
+            if (!response.ok) {
+                throw new Error('Failed to fetch tweets')
             }
-            setTweets([newTweet, ...tweets])
-            setName('')
-            setText('')
+            const data = await response.json()
+            setTweets(data)
+        } catch (error) {
+            console.error('Error fetching tweets:', error)
         }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (username && postText) {
+            try {
+                const response = await fetch('https://post-it.gyorgy-varga-b81.workers.dev/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, postText }),
+                })
+                if (!response.ok) {
+                    throw new Error('Failed to create tweet')
+                }
+                setUsername('')
+                setPostText('')
+                fetchTweets() // Refresh the tweet list after posting
+            } catch (error) {
+                console.error('Error creating tweet:', error)
+            }
+        }
+    }
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
     }
 
     return (
@@ -72,27 +82,27 @@ export default function Component() {
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="name">Your Name</Label>
+                                <Label htmlFor="username">Your Username</Label>
                                 <Input
-                                    id="name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    id="username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     required
                                     className="bg-white border-gray-300 text-black"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="text">Tweet Text</Label>
+                                <Label htmlFor="postText">Tweet Text</Label>
                                 <Textarea
-                                    id="text"
-                                    value={text}
-                                    onChange={(e) => setText(e.target.value.slice(0, maxLength))}
+                                    id="postText"
+                                    value={postText}
+                                    onChange={(e) => setPostText(e.target.value.slice(0, maxLength))}
                                     required
                                     className="bg-white border-gray-300 text-black resize-none"
                                     maxLength={maxLength}
                                 />
                                 <div className="text-sm text-gray-500 text-right">
-                                    {text.length}/{maxLength}
+                                    {postText.length}/{maxLength}
                                 </div>
                             </div>
                             <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">Tweet</Button>
@@ -110,16 +120,15 @@ export default function Component() {
                                 <div key={tweet.id} className="border-b border-gray-200 pb-4 last:border-b-0">
                                     <div className="flex items-start space-x-3">
                                         <Avatar className="w-10 h-10 bg-gray-200 text-black">
-                                            <AvatarFallback>{tweet.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                            <AvatarFallback>{tweet.username[0].toUpperCase()}</AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <div className="flex items-center space-x-2">
-                                                <h3 className="font-bold">{tweet.name}</h3>
-                                                <span className="text-gray-500 text-sm">{tweet.handle}</span>
+                                                <h3 className="font-bold">{tweet.username}</h3>
                                                 <span className="text-gray-500 text-sm">·</span>
-                                                <span className="text-gray-500 text-sm">{tweet.timestamp}</span>
+                                                <span className="text-gray-500 text-sm">{formatDate(tweet.postDate)}</span>
                                             </div>
-                                            <p className="mt-1">{tweet.text}</p>
+                                            <p className="mt-1">{tweet.postText}</p>
                                         </div>
                                     </div>
                                 </div>
