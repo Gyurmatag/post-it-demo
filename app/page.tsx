@@ -1,101 +1,133 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+interface Tweet {
+    id: number
+    name: string
+    handle: string
+    text: string
+    timestamp: string
+}
+
+const initialTweets: Tweet[] = [
+    {
+        id: 1,
+        name: "Elon Musk",
+        handle: "@elonmusk",
+        text: "Cybertruck is built for both land and sea",
+        timestamp: "2h ago"
+    },
+    {
+        id: 2,
+        name: "MKBHD",
+        handle: "@MKBHD",
+        text: "The best smartphone camera is the one you have with you",
+        timestamp: "5h ago"
+    },
+    {
+        id: 3,
+        name: "Paul Graham",
+        handle: "@paulg",
+        text: "Writing is nature's way of letting you know how sloppy your thinking is",
+        timestamp: "1d ago"
+    }
+]
+
+export default function Component() {
+    const [tweets, setTweets] = useState<Tweet[]>(initialTweets)
+    const [name, setName] = useState('')
+    const [text, setText] = useState('')
+    const maxLength = 280
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (name && text) {
+            const newTweet: Tweet = {
+                id: Date.now(),
+                name,
+                handle: `@${name.toLowerCase().replace(/\s+/g, '')}`,
+                text,
+                timestamp: 'Just now'
+            }
+            setTweets([newTweet, ...tweets])
+            setName('')
+            setText('')
+        }
+    }
+
+    return (
+        <div className="min-h-screen bg-white text-black p-4">
+            <div className="max-w-2xl mx-auto space-y-8">
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-bold">Compose Tweet</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Your Name</Label>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    required
+                                    className="bg-white border-gray-300 text-black"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="text">Tweet Text</Label>
+                                <Textarea
+                                    id="text"
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value.slice(0, maxLength))}
+                                    required
+                                    className="bg-white border-gray-300 text-black resize-none"
+                                    maxLength={maxLength}
+                                />
+                                <div className="text-sm text-gray-500 text-right">
+                                    {text.length}/{maxLength}
+                                </div>
+                            </div>
+                            <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">Tweet</Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="text-xl font-bold">Recent Tweets</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {tweets.map((tweet) => (
+                                <div key={tweet.id} className="border-b border-gray-200 pb-4 last:border-b-0">
+                                    <div className="flex items-start space-x-3">
+                                        <Avatar className="w-10 h-10 bg-gray-200 text-black">
+                                            <AvatarFallback>{tweet.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="flex items-center space-x-2">
+                                                <h3 className="font-bold">{tweet.name}</h3>
+                                                <span className="text-gray-500 text-sm">{tweet.handle}</span>
+                                                <span className="text-gray-500 text-sm">·</span>
+                                                <span className="text-gray-500 text-sm">{tweet.timestamp}</span>
+                                            </div>
+                                            <p className="mt-1">{tweet.text}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    )
 }
